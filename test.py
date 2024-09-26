@@ -14,55 +14,57 @@ def normalize_db():
 
         # Query 1: Create Target Locations table
         query1 = """
-        CREATE TABLE IF NOT EXISTS Locations
-        (
-            Id SERIAL PRIMARY KEY,
-            City VARCHAR(30),
-            Country VARCHAR(30),
-            Lon FLOAT,
-            Lat FLOAT,
-            UNIQUE (Country, City, Lon, Lat)
-        );
+        CREATE TABLE Locations
+(
+    Id SERIAL PRIMARY KEY,
+    City VARCHAR(100),
+    Country VARCHAR(100),
+    Lon FLOAT,
+    Lat FLOAT,
+    UNIQUE (Country, City, Lon, Lat)
+);
         """
         cur.execute(query1)
 
         # Query 2: Add Target_location column to mission table
         query2 = """
-        ALTER TABLE mission
-        ADD COLUMN IF NOT EXISTS Target_location INTEGER;
+        ALTER TABLE Mission
+    ADD COLUMN IF NOT EXISTS target_location INTEGER REFERENCES Locations(id);
         """
         cur.execute(query2)
 
         # Query 3: Insert data into Locations and update mission table
         query3 = """
-        WITH inserted_locations AS (
-            INSERT INTO Locations (City, Country, Lon, Lat)
-            SELECT DISTINCT ON (target_city, target_country) 
-                   target_city, target_country, target_longitude, target_latitude
-            FROM mission
-            WHERE target_city IS NOT NULL
-              AND target_country IS NOT NULL
-            ON CONFLICT (City, Country) DO UPDATE
-            SET Lon = EXCLUDED.Lon, Lat = EXCLUDED.Lat
-            RETURNING Id, City, Country
-        )
-        UPDATE mission
-        SET Target_location = inserted_locations.Id
-        FROM inserted_locations
-        WHERE mission.target_city = inserted_locations.City
-          AND mission.target_country = inserted_locations.Country;
+        INSERT INTO Locations (country, city, lat, lon)
+SELECT DISTINCT target_country, target_city, target_latitude, target_longitude
+FROM Mission
+WHERE target_country IS NOT NULL
+  AND target_city IS NOT NULL
+  AND target_latitude IS NOT NULL
+  AND target_longitude IS NOT NULL
+ON CONFLICT (country, city, lat, lon) DO NOTHING;
         """
         cur.execute(query3)
 
-        # Query 4: Drop unnecessary columns from mission table
-        query4 = """
+        # Query4: Update Mission table with corresponding location ids
+        query4 = """UPDATE Mission m
+SET target_location = l.id
+FROM Locations l
+WHERE m.target_country = l.country
+  AND m.target_city = l.city
+  AND m.target_longitude = l.lon
+  AND m.target_latitude = l.lat;
+"""
+
+        # Query 5: Drop unnecessary columns from mission table
+        query5 = """
         ALTER TABLE mission
         DROP COLUMN IF EXISTS target_city,
         DROP COLUMN IF EXISTS target_country,
         DROP COLUMN IF EXISTS target_longitude,
         DROP COLUMN IF EXISTS target_latitude;
         """
-        cur.execute(query4)
+        cur.execute(query5)
 
         # Commit the changes
         target_conn.commit()
