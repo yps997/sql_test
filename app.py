@@ -1,12 +1,38 @@
-from flask import Flask
+import psycopg2
+from psycopg2 import pool
+#from services.normal_service2 import migrate_data
 
-app = Flask(__name__)
+connection_pool = psycopg2.pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=10,
+            dbname="wwi_missions",
+            user="postgres",
+            password="1234",
+            host="localhost",
+            port="5432"
+        )
+
+def get_db_connection():
+    if connection_pool:
+        conn = connection_pool.getconn()
+        print(True)
+        return conn
+
+def release_db_connection(conn):
+    connection_pool.putconn(conn)
+    print(True)
+
+conn = get_db_connection()
+#migrate_data(conn)
 
 
-@app.route('/')
-def hello_world():  # put application's code here
-    return 'Hello World!'
 
 
-if __name__ == '__main__':
-    app.run()
+
+# cur.execute(create_location_query)
+# cur.execute(create_coordinates_query)
+# cur.execute(create_target_query)
+
+# connect.commit()
+# al_data = cur.fetchall()
+release_db_connection(conn)
