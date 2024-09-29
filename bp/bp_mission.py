@@ -1,20 +1,22 @@
-from flask import Blueprint, jsonify, request
-from sqlalchemy.exc import IntegrityError
-#from models import Mission, db
+from flask import Blueprint, jsonify
+from services.mission_service import get_missions, get_mission_by_id
 
-mission_bp = Blueprint('users', __name__)
+mission_bp = Blueprint('mission', __name__)
 
 @mission_bp.route('/api/mission', methods=['GET'])
 def get_missions():
     missions = get_missions()
     if missions:
-        return jsonify([mission.to_dict() for mission in missions]), 200
+        return jsonify(missions), 200
     else:
-        return jsonify(f'not found any mission in the database')
+        return jsonify(f'not found mission in database')
+
 @mission_bp.route('/api/mission/<int:id>', methods=['GET'])
-def get_mission(id):
-    mission = get_mission(id)
+def get_mission_bi_id():
+    mission = get_mission_by_id(id)
     if mission:
-        return jsonify(mission.to_dict()), 200
+        return jsonify(mission), 200
     else:
-        return jsonify({'error': 'Mission not found'}), 404
+        return jsonify({'error': 'not found'}), 404
+
+

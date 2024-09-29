@@ -1,4 +1,7 @@
-from bp.bp_mission import mission_bp as db
+from models.DB import db
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
+
 
 class Mission(db.Model):
     __tablename__ = 'mission'
@@ -9,7 +12,9 @@ class Mission(db.Model):
     air_force = db.Column(db.String(200))
     unit_id = db.Column(db.Integer)
     aircraft_series = db.Column(db.String(200))
-    location_id = db.Column(db.Integer, foreign_key=True)
+    location_id = db.Column(db.Integer, ForeignKey('location.location_id'))
+
+    location = relationship('Location', back_populates='missions')
 
     def get_dict(self):
         return {
@@ -19,7 +24,8 @@ class Mission(db.Model):
             'country': self.country,
             'air_force': self.air_force,
             'unit_id': self.unit_id,
-            'aircraft_series': self.aircraft_series
+            'aircraft_series': self.aircraft_series,
+            'location_id': self.location_id
         }
 
 
@@ -31,6 +37,8 @@ class Location(db.Model):
     loc_lat = db.Column(db.Float)
     loc_lon = db.Column(db.Float)
 
+    missions = relationship('Mission', back_populates='location')
+
     def get_dict(self):
         return {
             'location_id': self.location_id,
@@ -39,6 +47,3 @@ class Location(db.Model):
             'loc_lat': self.loc_lat,
             'loc_lon': self.loc_lon
         }
-
-
-

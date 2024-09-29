@@ -1,38 +1,24 @@
-import psycopg2
-from psycopg2 import pool
-#from services.normal_service2 import migrate_data
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
+from bp.bp_mission import mission_bp
+from bp.bp_analyse import analysis_bp
+from models.DB import db
+app = Flask(__name__)
 
-connection_pool = psycopg2.pool.SimpleConnectionPool(
-            minconn=1,
-            maxconn=10,
-            dbname="wwi_missions",
-            user="postgres",
-            password="1234",
-            host="localhost",
-            port="5432"
-        )
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:1234@localhost:5432/wwii_missions'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-def get_db_connection():
-    if connection_pool:
-        conn = connection_pool.getconn()
-        print(True)
-        return conn
+db.init_app(app)
 
-def release_db_connection(conn):
-    connection_pool.putconn(conn)
-    print(True)
+app.register_blueprint(mission_bp)
+app.register_blueprint(analysis_bp)
+with app.app_context():
+    try:
+        db.session.execute(text('SELECT 1'))
+        print("Connection successful!")
+    except Exception as e:
+        print("Connection failed:", str(e))
 
-conn = get_db_connection()
-#migrate_data(conn)
-
-
-
-
-
-# cur.execute(create_location_query)
-# cur.execute(create_coordinates_query)
-# cur.execute(create_target_query)
-
-# connect.commit()
-# al_data = cur.fetchall()
-release_db_connection(conn)
+if __name__ == '__main__':
+    app.run(debug=True)
